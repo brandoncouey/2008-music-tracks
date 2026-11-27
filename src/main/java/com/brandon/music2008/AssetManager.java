@@ -22,8 +22,12 @@ final class AssetManager {
 
     static final Path ASSETS_DIR = Path.of(System.getProperty("user.home"), ".runelite", "music2008", "assets");
 
+    static Path soundbankPath() {
+        return ASSETS_DIR.resolve("soundbank.sf2");
+    }
+
     static boolean isReady() {
-        return Files.isDirectory(ASSETS_DIR.resolve("cache"))
+        return Files.isRegularFile(soundbankPath())
             && Files.isDirectory(ASSETS_DIR.resolve("music"));
     }
 
@@ -38,7 +42,7 @@ final class AssetManager {
         }
         Files.createDirectories(ASSETS_DIR);
         Path tmp = ASSETS_DIR.resolveSibling("assets-download.zip.tmp");
-        progress.accept("Downloading 2008 music assets (~63 MB)…");
+        progress.accept("Downloading 2008 music assets (~100 MB)…");
         log.info("Downloading assets from {}", ASSETS_URL);
         download(ASSETS_URL, tmp, progress);
         progress.accept("Extracting assets…");

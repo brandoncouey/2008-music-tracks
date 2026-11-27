@@ -1,6 +1,8 @@
 .gradle
 build
 out
+libs/
+packaging/out/
 .idea/
 .project
 .settings/

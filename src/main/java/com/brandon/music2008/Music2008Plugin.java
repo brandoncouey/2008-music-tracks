@@ -63,7 +63,7 @@ public class Music2008Plugin extends Plugin {
     @Override protected void startUp() {
         engine = new PlaybackEngine();
         SwingUtilities.invokeLater(this::buildPanel);
-        log.info("2008 Music Soundtrack enabled; cache={}", config.cacheFolder());
+        log.info("2008 Music Soundtrack enabled; soundbank={}", AssetManager.soundbankPath());
         startAssetEnsure(false);
     }
 
@@ -225,16 +225,16 @@ public class Music2008Plugin extends Plugin {
         panel.add(Box.createVerticalStrut(14));
 
         // ── Help text ──
-        JLabel help = new JLabel("<html><small>Automatic matches use cache name hashes.<br>"
+        JLabel help = new JLabel("<html><small>Automatic matches use track name lookup.<br>"
             + "Unmatched songs play original OSRS music.<br>"
-            + "Override cache/MIDI paths in plugin settings.</small></html>");
+            + "Override MIDI paths in plugin settings.</small></html>");
         help.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(help);
 
         BufferedImage icon = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = icon.createGraphics();
         g.setColor(new Color(92, 185, 220)); g.fillOval(2, 2, 28, 28);
-        g.setColor(Color.BLACK); g.setFont(new Font("SansSerif", Font.BOLD, 18)); g.drawString("H", 9, 23);
+        g.setColor(Color.BLACK); g.setFont(new Font("SansSerif", Font.BOLD, 18)); g.drawString("M", 7, 23);
         g.dispose();
         navigation = NavigationButton.builder().tooltip("2008 Music Soundtrack").icon(icon).priority(8).panel(panel).build();
         toolbar.addNavigation(navigation);
@@ -304,7 +304,7 @@ public class Music2008Plugin extends Plugin {
 
         Path midi = (name == null || catalog == null || gameMuted) ? null : catalog.midiFor(name);
         PlaybackEngine.Request request = midi == null ? null
-            : new PlaybackEngine.Request(name, Path.of(config.cacheFolder()), midi, config.loop(), revision);
+            : new PlaybackEngine.Request(name, AssetManager.soundbankPath(), midi, config.loop(), revision);
 
         if (!Objects.equals(name, lastName)) {
             if (config.diagnostics()) log.info("Track: {} osrsId={} archive={} replacement={}",
