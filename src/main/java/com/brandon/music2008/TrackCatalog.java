@@ -4,6 +4,7 @@ import java.io.*;
 import java.nio.charset.*;
 import java.nio.file.*;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.LinkedHashMap;
 
@@ -41,7 +42,7 @@ public final class TrackCatalog {
             }
         }
         try (Stream<Path> paths = Files.list(midiDir)) {
-            for (Path path : paths.filter(Files::isRegularFile).toList()) {
+            for (Path path : paths.filter(Files::isRegularFile).collect(Collectors.toList())) {
                 String filename = path.getFileName().toString();
                 if (!filename.toLowerCase(Locale.ROOT).endsWith(".mid")) continue;
                 try {
@@ -69,7 +70,7 @@ public final class TrackCatalog {
         Map<Integer, Path> fanfares = new LinkedHashMap<>();
         if (!Files.isDirectory(fanfareDir)) return fanfares;
         try (Stream<Path> paths = Files.list(fanfareDir)) {
-            for (Path path : paths.filter(Files::isRegularFile).toList()) {
+            for (Path path : paths.filter(Files::isRegularFile).collect(Collectors.toList())) {
                 String filename = path.getFileName().toString();
                 if (!filename.toLowerCase(Locale.ROOT).endsWith(".mid")) continue;
                 try {
