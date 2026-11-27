@@ -10,7 +10,7 @@
     Music assets (~63 MB) download automatically the first time you
     enable the plugin inside RuneLite.
 
-    Safe to run multiple times — existing files are backed up.
+    Safe to run multiple times - existing files are backed up.
 .NOTES
     Requires RuneLite to already be installed (https://runelite.net).
     Does NOT touch your RuneLite account, login, or any game settings.
@@ -18,6 +18,7 @@
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $JarUrl      = 'https://github.com/brandoncouey/hdos-music-plugin/releases/latest/download/2008-music-soundtrack.jar'
 $PluginDir   = Join-Path $env:USERPROFILE '.runelite\sideloaded-plugins'
@@ -25,7 +26,7 @@ $JarDest     = Join-Path $PluginDir '2008-music-soundtrack.jar'
 $RuneLiteExe = $null
 
 Write-Host ''
-Write-Host '=== 2008 Music Soundtrack — Tester Installer ===' -ForegroundColor Cyan
+Write-Host '=== 2008 Music Soundtrack - Tester Installer ===' -ForegroundColor Cyan
 Write-Host ''
 
 # ── 1. Find RuneLite ──────────────────────────────────────────────────────────
@@ -81,7 +82,7 @@ try {
 }
 
 # ── 5. Create desktop shortcut ───────────────────────────────────────────────
-$ShortcutPath = Join-Path ([Environment]::GetFolderPath('Desktop')) 'RuneLite — 2008 Music Test.lnk'
+$ShortcutPath = Join-Path ([Environment]::GetFolderPath('Desktop')) 'RuneLite - 2008 Music Test.lnk'
 $WshShell     = New-Object -ComObject WScript.Shell
 $shortcut     = $WshShell.CreateShortcut($ShortcutPath)
 $shortcut.TargetPath       = $RuneLiteExe
@@ -89,20 +90,20 @@ $shortcut.Arguments        = '--developer-mode'
 $shortcut.WorkingDirectory = Split-Path $RuneLiteExe
 $shortcut.Description      = 'RuneLite with 2008 Music Soundtrack tester plugin'
 $shortcut.Save()
-Write-Host "[ok] Created desktop shortcut: RuneLite — 2008 Music Test.lnk"
+Write-Host "[ok] Created desktop shortcut: RuneLite - 2008 Music Test.lnk"
 
 # ── 6. Done ───────────────────────────────────────────────────────────────────
 Write-Host ''
 Write-Host '=== Installation complete! ===' -ForegroundColor Green
 Write-Host ''
 Write-Host 'Next steps:' -ForegroundColor White
-Write-Host '  1. Double-click  "RuneLite — 2008 Music Test"  on your desktop.'
+Write-Host '  1. Double-click  "RuneLite - 2008 Music Test"  on your desktop.'
 Write-Host '  2. Log in normally with your own account.'
 Write-Host '  3. Open Plugin Hub (the puzzle-piece icon) and enable'
 Write-Host '     "2008 Music Soundtrack" if it is not already on.'
 Write-Host '  4. The plugin downloads ~63 MB of music assets the first time.'
 Write-Host '     Watch the sidebar panel for progress.'
-Write-Host '  5. Walk to a new area or open the Music tab — HDOS music plays!'
+Write-Host '  5. Walk to a new area or open the Music tab - HDOS music plays!'
 Write-Host ''
 Write-Host 'Report issues at: https://github.com/brandoncouey/hdos-music-plugin/issues'
 Write-Host ''

@@ -4,11 +4,11 @@
 # Does NOT touch your RuneLite account, profile, or other plugins.
 
 $JarPath      = Join-Path $env:USERPROFILE '.runelite\sideloaded-plugins\2008-music-soundtrack.jar'
-$ShortcutPath = Join-Path ([Environment]::GetFolderPath('Desktop')) 'RuneLite — 2008 Music Test.lnk'
+$ShortcutPath = Join-Path ([Environment]::GetFolderPath('Desktop')) 'RuneLite - 2008 Music Test.lnk'
 $AssetsDir    = Join-Path $env:USERPROFILE '.runelite\music2008'
 
 Write-Host ''
-Write-Host '=== 2008 Music Soundtrack — Tester Uninstaller ===' -ForegroundColor Cyan
+Write-Host '=== 2008 Music Soundtrack - Tester Uninstaller ===' -ForegroundColor Cyan
 Write-Host ''
 
 if (Test-Path $JarPath)      { Remove-Item $JarPath;      Write-Host "[ok] Removed plugin JAR" }
