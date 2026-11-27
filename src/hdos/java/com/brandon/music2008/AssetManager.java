@@ -18,7 +18,7 @@ final class AssetManager {
 
     // Replace with a real GitHub Release URL once assets are published.
     // The ZIP should contain cache/, music/, and fanfares/ at its root.
-    static final String ASSETS_URL = "https://github.com/YOUR_REPO/releases/download/assets-v1/HDOS-Music-Assets-Compact.zip";
+    static final String ASSETS_URL = "https://github.com/brandoncouey/hdos-music-plugin/releases/download/assets-v1/HDOS-Music-Assets-Compact.zip";
 
     static final Path ASSETS_DIR = Path.of(System.getProperty("user.home"), ".runelite", "music2008", "assets");
 
