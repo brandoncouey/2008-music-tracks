@@ -2,7 +2,6 @@ plugins { id 'java' }
 
 repositories {
 	maven { url = 'https://repo.runelite.net' }
-	maven { url = 'https://jitpack.io' }
 	mavenCentral()
 }
 
