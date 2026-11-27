@@ -27,3 +27,22 @@ tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
 	options.release.set(11)
 }
+
+def runeLiteJava = "C:/Users/brrad/AppData/Local/RuneLite/jre/bin/javaw.exe"
+def runeLiteJar  = "C:/Users/brrad/AppData/Local/RuneLite/RuneLite.jar"
+
+tasks.register('runClient', JavaExec) {
+	dependsOn jar
+	group = 'runelite'
+	description = 'Launch RuneLite with this plugin loaded via --classpath'
+
+	executable = runeLiteJava
+	classpath = files()   // JavaExec classpath unused; launcher handles it
+	mainClass  = '-jar'   // triggers -jar mode via args below
+
+	args runeLiteJar,
+		 '--developer-mode',
+		 '--classpath', jar.archiveFile.get().asFile.absolutePath
+
+	jvmArgs '-Djava.awt.headless=false'
+}
