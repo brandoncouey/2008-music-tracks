@@ -1,80 +1,43 @@
-# ![icon](./icon.png) Music Replacer
-Replace OSRS tracks with presets (such as [OSRSBeatz](https://www.youtube.com/@OSRSBeatz) or RS3 music) or your own music.
-It also allows you to search the music from YouTube.
+# 2008 Music Soundtrack — RuneLite Plugin
 
-The replaced (or "overridden") tracks will behave like the normal music.
-That is, they'll play whenever the original track would play and volume is controlled by the in-game volume settings.
+Replaces OSRS music tracks with their HDOS (2008-era) versions using native cache synthesis and the original HDOS instrument patches. When no HDOS match exists the original OSRS music plays unchanged.
 
-## 💁 Usage
-### Bulk Override
-With bulk override you can replace multiple tracks at once.
-Just right-click on the music-tab, choose `Override tracks` and select if you want to override `From preset` or `From directory` (local).  
-![](./demo-data/bulk-override.webp)
+## How it works
 
-#### From preset
-With presets you can easily replace all (available) tracks by some preset such as OSRSBeatz or RS3 music.
-When you select a preset it will begin downloading all the tracks in the preset ([or possibly skip if already overridden](#skip-overidden-if-bulk)).
-(Note that if you stop runelite prematurely it may not have overridden all tracks available in the preset.)  
-![](./demo-data/bulk-override-preset-osrsbeatz.webp)  
-(In case you're missing any track in an existing preset, or a preset altogether, please create a [PR](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests) for the [presets file](./src/main/resources/presets.json)).
+On first use the plugin downloads a ~63 MB compact asset package (HDOS instrument patches + 826 music MIDIs + 396 fanfare MIDIs) and stores it in `~/.runelite/music2008/assets/`. No HDOS installation, custom Java runtime, or manual path configuration is required.
 
-#### From directory
-You can also bulk override with ([supported](#supported-formats)) local files.
-To do this just select the folder which contains the files.
-For this to work the file names must be **identical** to the track name.  
-![](./demo-data/bulk-override-preset-directory.webp)
+Track matching uses HDOS cache name hashes against the displayed song name. 481 of 899 OSRS music archives have a confirmed unique HDOS match. Unmatched tracks play original OSRS music.
 
-#### Skip overidden if bulk
-In the config there's a `Skip overridden if bulk` checkbox that, when on, will cause bulk-override to skip any already overridden files.
-Useful when you've already manually overridden a few files, now want to use a preset but don't want to override the ones you already replaced.
+## Install
 
-### Single override
-To replace single tracks go to the track you wish to replace in the track list.
-(For ease of use you can [jump to track](#jump-to-track) or use the search functionality of the [music plugin](https://github.com/runelite/runelite/wiki/Music#music-plugin-configuration)).
-Right-click on the track you wish to replace and click `Override`.
-Then choose to override `With a local file.` or `From a youtube search.`.  
- ![](./demo-data/single-override.webp)
+1. Build the fat JAR: `.\gradlew.bat --no-daemon test jar`
+2. Copy `build/libs/2008-music-soundtrack-0.1.0-local.jar` to `~/.runelite/sideloaded-plugins/`
+3. Launch RuneLite with `--developer-mode`
+4. Enable **2008 Music Soundtrack** in the plugin list
 
-#### From a youtube search
-When overriding from a youtube search enter your desired search term and choose an item.
-Use `Continue` to see more search results.
-The audio will then be downloaded and when finished the track will be replaced.  
-![](./demo-data/single-override-youtube-search.webp)  
+Assets download automatically on first enable. Progress is shown in the plugin's sidebar panel.
 
-#### From a local file
-When overriding with a local file just select with which ([supported](#supported-formats)) file you want to override.  
-![](./demo-data/single-override-local.webp)
+## Development status
 
-### Removing overrides
-- To remove all overrides right-click the music tab and select `Remove overrides`.
-- To remove a single override right-click (an overridden) track and select `Remove override`.
+This is a working prototype, not a Plugin Hub release. Known limitations:
 
-### Jump to track
-Clicking on the currently playing label will jump to the track in the music list.  
-![](./demo-data/jump-to-track.webp)
+- 418 OSRS archives have no verified HDOS match and retain original music
+- Jingle/fanfare replacement is scaffolded but not yet wired (jingle script ID not yet confirmed from a live session)
+- Lifecycle and restoration behavior not fully verified across all transition types
 
-### Play overrides to end
-When the `Play overrides to end` config checkbox is on, a new track won't be played until the current override is finished.
-Especially useful if you remain in one area with vanilla `Music area mode` on `Modern` because it might end your override tracks prematurely 
-(which happens because osrs thinks the vanilla track is done and starts playing a new one).
-It will practically queue the next track, and when one is queued the `Playing` label on the music tab will become bold and get a hover tooltip for which track is `Up next`.
-The label will also become **clickable** to end the current override.  
-![](./demo-data/playing-hover-up-next.webp)  
-❗ **Note**: This feature might be somewhat counter-intuitive, which is also why it's off by default.
-For example this also means that when you manually click a track to play it won't play until the current override is finished.
-(Unless then clicked on the `Playing` label as described above).
+## Repository layout
 
-### Supported formats
-Currently only `wav` (in CD quality) and `mp3` formats are supported.
+| Path | Purpose |
+|---|---|
+| `src/hdos/java/` | Active plugin source |
+| `src/hdos/resources/` | Plugin properties, HDOS music index TSV |
+| `src/hdosTest/java/` | Active tests |
+| `src/main/` | Upstream Music Replacer source (reference only, excluded from build) |
+| `libs/` | Native synthesis JARs (hdos-synth, Displee read-only, vorbis) |
+| `packaging/` | Bundle assembly and verification scripts |
 
-## Attribution
-This project uses the RuneLite fork of [JaCo mp3 player](http://jacomp3player.sourceforge.net) to play mp3, its source can be found [here](https://github.com/runelite/jaco-mp3).
-The JaCo project is licensed under LGPL which you can find [here](./legal/lgpl-3.0.txt) or otherwise [here](https://www.gnu.org/licenses/lgpl-3.0.en.html).
-In case one wishes to swap out JaCo for something different, one can clone this plugin and implement the [MusicPlayer](./src/main/java/nl/alowaniak/runelite/musicreplacer/MusicPlayer.java) for the mp3 extension.
+## Third-party notices
 
-## 💌 Support
-For any questions or feedback you can find me on Discord as `Mr.A#0220`
+The native synthesiser is derived from [lequietriot/runescape-midi-player-suite](https://github.com/rune-status/lequietriot-runescape-midi-player-suite). HDOS instrument and MIDI assets are Jagex content. See `THIRD-PARTY-NOTICES.txt` for full details.
 
-Feel free to help out by creating issues, pull requests, or just messaging me (on Discord).
-
-[music plugin]: https://github.com/runelite/runelite/wiki/Music#music-plugin-configuration
+This project is not affiliated with Jagex or the RuneLite Plugin Hub. Do not publish or distribute without resolving applicable licensing and Plugin Hub review requirements.

@@ -5,6 +5,7 @@ import java.nio.charset.*;
 import java.nio.file.*;
 import java.util.*;
 import java.util.stream.Stream;
+import java.util.LinkedHashMap;
 
 /** Matches cache name hashes rather than assuming archive IDs are shared. */
 public final class TrackCatalog {
@@ -56,4 +57,27 @@ public final class TrackCatalog {
     public Path midiFor(String name) { Integer archive = archiveFor(name); return archive == null ? null : midiFiles.get(archive); }
     public Path midiFor(int archive) { return midiFiles.get(archive); }
     public int available() { return midiFiles.size(); }
+
+    /**
+     * Load fanfare MIDI files from a directory.
+     * Fanfare filenames follow the same convention: leading archive ID, e.g. "245 - Levelup.mid".
+     * No name-hash index is used because fanfares are triggered by OSRS script/event, not by
+     * displayed name. The caller resolves the HDOS fanfare archive by OSRS fanfare ID once a
+     * confirmed script-ID-to-archive mapping is available.
+     */
+    public static Map<Integer, Path> loadFanfares(Path fanfareDir) throws IOException {
+        Map<Integer, Path> fanfares = new LinkedHashMap<>();
+        if (!Files.isDirectory(fanfareDir)) return fanfares;
+        try (Stream<Path> paths = Files.list(fanfareDir)) {
+            for (Path path : paths.filter(Files::isRegularFile).toList()) {
+                String filename = path.getFileName().toString();
+                if (!filename.toLowerCase(Locale.ROOT).endsWith(".mid")) continue;
+                try {
+                    int archive = Integer.parseInt(filename.split("[ .-]", 2)[0]);
+                    fanfares.putIfAbsent(archive, path);
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+        return Collections.unmodifiableMap(fanfares);
+    }
 }

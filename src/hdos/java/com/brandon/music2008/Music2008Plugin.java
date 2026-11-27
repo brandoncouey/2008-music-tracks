@@ -7,6 +7,7 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.nio.file.*;
+import java.util.Map;
 import java.util.Objects;
 import net.runelite.api.*;
 import net.runelite.api.events.*;
@@ -33,6 +34,7 @@ public class Music2008Plugin extends Plugin {
 
     private PlaybackEngine engine;
     private TrackCatalog catalog;
+    private Map<Integer, Path> fanfareCatalog = Map.of();
     private NavigationButton navigation;
 
     // Panel widgets updated from background + client threads
@@ -129,6 +131,13 @@ public class Music2008Plugin extends Plugin {
             catalog = null;
             catalogueError = e.getMessage();
             log.warn("Cannot load catalogue", e);
+        }
+        try {
+            fanfareCatalog = TrackCatalog.loadFanfares(Path.of(config.fanfareFolder()));
+            log.info("Loaded {} fanfare MIDI files", fanfareCatalog.size());
+        } catch (Exception e) {
+            fanfareCatalog = Map.of();
+            log.warn("Cannot load fanfare catalogue", e);
         }
         lastName = null;
         revision++;
@@ -253,6 +262,21 @@ public class Music2008Plugin extends Plugin {
         }
     }
 
+    // Log every script that fires when diagnostics is on. Used to identify the
+    // jingle-trigger script ID during a live session (level-up, quest complete, etc.).
+    // Once confirmed, replace the raw-int guard below with ScriptID.WHATEVER.
+    // Known candidate range from RS3 research: 9238 (music volume slider) — others TBD.
+    @Subscribe public void onScriptPostFired(ScriptPostFired event) {
+        if (!config.diagnostics()) return;
+        int id = event.getScriptId();
+        // Only log scripts that look music-related (high-value IDs known from prior research)
+        // or anything that fires rarely (potential jingle trigger). Full logging would be too noisy.
+        // Tune this list once live session data is collected.
+        if (id == 9238 || id == 9239 || id == 9240 || id == 9241) {
+            log.info("2008 Music script fired: id={}", id);
+        }
+    }
+
     @Subscribe public void onGameStateChanged(GameStateChanged event) {
         GameState state = event.getGameState();
         if (state == GameState.LOGIN_SCREEN || state == GameState.CONNECTION_LOST) {
@@ -317,9 +341,10 @@ public class Music2008Plugin extends Plugin {
                 trackText = escape(name) + " <font color='green'>→ HDOS</font><br><small>" + escape(engine.status()) + "</small>";
             }
             int available = catalog == null ? 0 : catalog.available();
+            int fanfares = fanfareCatalog.size();
             final String tt = trackText;
             final String am = assetState == AssetState.READY
-                ? "Ready — " + available + " tracks" : assetMessage;
+                ? "Ready — " + available + " tracks, " + fanfares + " fanfares" : assetMessage;
             SwingUtilities.invokeLater(() -> {
                 if (trackLabel != null) trackLabel.setText("<html>" + tt + "</html>");
                 if (assetState == AssetState.READY && assetStatusLabel != null)
