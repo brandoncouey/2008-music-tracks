@@ -138,7 +138,7 @@ final class PlaybackEngine implements AutoCloseable {
             log.info("Playing {}", next.name());
 
             while (!closed && next.equals(desired.get()) && sequencer.isRunning()) {
-                try { Thread.sleep(50); } catch (InterruptedException e) { break; }
+                synchronized (wake) { try { wake.wait(50); } catch (InterruptedException e) { break; } }
             }
             sequencer.stop();
             active = null;

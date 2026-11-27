@@ -5,6 +5,7 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.function.Consumer;
 import java.util.zip.*;
+import net.runelite.client.util.Filepath;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -23,7 +24,7 @@ final class AssetManager {
     // The ZIP should contain cache/, music/, and fanfares/ at its root.
     static final String ASSETS_URL = "https://github.com/brandoncouey/2008-music-tracks/releases/download/assets-v3/2008-music-assets-v3.zip";
 
-    static final Path ASSETS_DIR = Path.of(System.getProperty("user.home"), ".runelite", "music2008", "assets");
+    static final Path ASSETS_DIR = Filepath.RUNELITE_DIR.toPath().resolve("music2008").resolve("assets");
 
     static Path soundbankPath() {
         return ASSETS_DIR.resolve("soundbank.sf2");
