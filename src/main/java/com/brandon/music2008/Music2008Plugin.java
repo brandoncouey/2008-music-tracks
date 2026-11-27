@@ -16,6 +16,7 @@ import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
+import okhttp3.OkHttpClient;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.*;
@@ -31,6 +32,7 @@ public class Music2008Plugin extends Plugin {
     @Inject private ClientThread clientThread;
     @Inject private Music2008Config config;
     @Inject private ClientToolbar toolbar;
+    @Inject private OkHttpClient httpClient;
 
     private PlaybackEngine engine;
     private TrackCatalog catalog;
@@ -74,7 +76,7 @@ public class Music2008Plugin extends Plugin {
         Thread t = new Thread(() -> {
             try {
                 if (forceRedownload) AssetManager.deleteAssets();
-                AssetManager.ensureAssets(this::onDownloadProgress);
+                AssetManager.ensureAssets(httpClient, this::onDownloadProgress);
                 assetState = AssetState.READY;
                 assetMessage = "Ready — assets installed";
             } catch (Exception e) {
