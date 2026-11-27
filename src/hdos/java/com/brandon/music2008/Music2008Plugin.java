@@ -241,6 +241,18 @@ public class Music2008Plugin extends Plugin {
         if (Music2008Config.GROUP.equals(event.getGroup())) reload = true;
     }
 
+    // VarbitChanged covers both varbit and varp changes in this RuneLite version.
+    // MUSIC_CURRENT_ID fires when the game switches to a new song — reset lastName
+    // so the next ClientTick re-resolves immediately without waiting for a widget update.
+    @Subscribe public void onVarbitChanged(VarbitChanged event) {
+        int id = event.getVarpId();
+        if (id == VarPlayerID.MUSIC_CURRENT_ID || id == VarPlayerID.MUSIC_CURRENT_TRACK) {
+            if (config.diagnostics())
+                log.info("2008 Music varp {} → {}", id, event.getValue());
+            lastName = null;
+        }
+    }
+
     @Subscribe public void onGameStateChanged(GameStateChanged event) {
         GameState state = event.getGameState();
         if (state == GameState.LOGIN_SCREEN || state == GameState.CONNECTION_LOST) {
@@ -271,8 +283,11 @@ public class Music2008Plugin extends Plugin {
             : new PlaybackEngine.Request(name, Path.of(config.cacheFolder()), midi, config.loop(), revision);
 
         if (!Objects.equals(name, lastName)) {
-            if (config.diagnostics()) log.info("2008 Music track={} archive={} replacement={}",
-                name, catalog == null || name == null ? null : catalog.archiveFor(name), midi);
+            if (config.diagnostics()) log.info("2008 Music track={} osrsId={} hdosArchive={} replacement={}",
+                name,
+                client.getVarpValue(VarPlayerID.MUSIC_CURRENT_ID),
+                catalog == null || name == null ? null : catalog.archiveFor(name),
+                midi);
             lastName = name;
         }
 
@@ -280,7 +295,9 @@ public class Music2008Plugin extends Plugin {
         engine.setVolume(vol);
 
         if (engine.isActive(request)) {
-            client.setMusicVolume(0);
+            // Use 1 (not 0) so OSRS keeps the audio stream alive — when we restore,
+            // the song resumes immediately without needing a restart.
+            client.setMusicVolume(1);
             mutedByUs = true;
         } else {
             restoreOriginal();
