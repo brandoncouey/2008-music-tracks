@@ -1,0 +1,38 @@
+plugins { id 'java' }
+
+repositories {
+	maven {
+		url = 'https://repo.runelite.net'
+	}
+	mavenCentral()
+}
+
+def runeLiteVersion = '1.13.8'
+
+dependencies {
+	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
+
+	implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+	testImplementation 'junit:junit:4.13.2'
+	testImplementation group: 'net.runelite', name:'client', version: runeLiteVersion
+}
+
+group = 'com.brandon.music2008'
+version = '0.1.0-local'
+sourceSets {
+    main { java { setSrcDirs(['src/main/java']) }; resources { setSrcDirs(['src/main/resources']) } }
+    test { java { setSrcDirs(['src/test/java']) } }
+}
+tasks.named('jar') {
+    archiveBaseName = '2008-music-soundtrack'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    exclude 'META-INF/*.SF', 'META-INF/*.RSA', 'META-INF/*.DSA', 'module-info.class'
+}
+tasks.named('test') { useJUnit(); maxHeapSize = '1g' }
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+    options.release.set(17)
+}
