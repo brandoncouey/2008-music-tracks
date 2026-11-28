@@ -89,22 +89,19 @@ final class AssetManager {
     }
 
     private static void extract(Filepath zip, Filepath dest) throws Exception {
-        // ZipFile requires java.io.File — convert only at this javax.util.zip boundary
-        try (ZipFile zf = new ZipFile(Filepath.Unchecked.getFile(zip))) {
-            var entries = zf.entries();
-            while (entries.hasMoreElements()) {
-                ZipEntry entry = entries.nextElement();
+        try (ZipInputStream zin = new ZipInputStream(new BufferedInputStream(zip.openInputStream()))) {
+            ZipEntry entry;
+            while ((entry = zin.getNextEntry()) != null) {
                 // Filepath.join() enforces path containment, replacing the manual ZIP-slip check
                 if (entry.isDirectory()) {
                     dest.join(entry.getName()).createDirectories();
                 } else {
                     Filepath target = dest.join(entry.getName());
                     target.getParent().createDirectories();
-                    try (InputStream in = zf.getInputStream(entry);
-                         OutputStream out = target.openOutputStream()) {
+                    try (OutputStream out = target.openOutputStream()) {
                         byte[] buf = new byte[8192];
                         int n;
-                        while ((n = in.read(buf)) != -1) out.write(buf, 0, n);
+                        while ((n = zin.read(buf)) != -1) out.write(buf, 0, n);
                     }
                 }
             }

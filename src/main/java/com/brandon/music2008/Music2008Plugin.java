@@ -6,8 +6,6 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.nio.file.Path;
 import java.util.Map;
 import java.util.Objects;
 import net.runelite.api.*;
@@ -26,7 +24,7 @@ import net.runelite.client.ui.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@PluginDescriptor(name="2008 Music Soundtrack", description="Play 2008-era music with original instruments; retains OSRS music when unavailable", tags={"music","sound","2008","soundtrack"}, enabledByDefault=true)
+@PluginDescriptor(name="2008 Music Soundtrack", internalName="2008-music-soundtrack", description="Play 2008-era music with original instruments; retains OSRS music when unavailable", tags={"music","sound","2008","soundtrack"}, enabledByDefault=true)
 public class Music2008Plugin extends Plugin {
     private static final Logger log = LoggerFactory.getLogger(Music2008Plugin.class);
 
@@ -38,7 +36,7 @@ public class Music2008Plugin extends Plugin {
 
     private PlaybackEngine engine;
     private TrackCatalog catalog;
-    private Map<Integer, File> fanfareCatalog = Map.of();
+    private Map<Integer, Filepath> fanfareCatalog = Map.of();
     private NavigationButton navigation;
 
     // Panel widgets updated from background + client threads
@@ -127,20 +125,9 @@ public class Music2008Plugin extends Plugin {
         });
     }
 
-    private Filepath resolveFolder(String configValue, String subDir) {
-        if (!configValue.isEmpty()) {
-            return Filepath.Unchecked.getRooted(Path.of(configValue));
-        }
-        String bundle = System.getProperty("music2008.bundle");
-        if (bundle != null) {
-            return Filepath.Unchecked.getRooted(Path.of(bundle, "assets", subDir));
-        }
-        return AssetManager.assetsDir.join(subDir);
-    }
-
     private void reloadCatalogue() {
         try {
-            catalog = TrackCatalog.load(resolveFolder(config.midiFolder(), "music"));
+            catalog = TrackCatalog.load(AssetManager.assetsDir.join("music"));
             catalogueError = null;
             log.info("Loaded {} MIDI files", catalog.available());
         } catch (Exception e) {
@@ -149,7 +136,7 @@ public class Music2008Plugin extends Plugin {
             log.warn("Cannot load catalogue", e);
         }
         try {
-            fanfareCatalog = TrackCatalog.loadFanfares(resolveFolder(config.fanfareFolder(), "fanfares"));
+            fanfareCatalog = TrackCatalog.loadFanfares(AssetManager.assetsDir.join("fanfares"));
             log.info("Loaded {} fanfare MIDI files", fanfareCatalog.size());
         } catch (Exception e) {
             fanfareCatalog = Map.of();
@@ -318,9 +305,9 @@ public class Music2008Plugin extends Plugin {
         boolean gameMuted = vol < 0.001;
         if (preview != null && client.getGameState() != GameState.LOGGED_IN) vol = 0.35;
 
-        File midi = (name == null || catalog == null || gameMuted) ? null : catalog.midiFor(name);
+        Filepath midi = (name == null || catalog == null || gameMuted) ? null : catalog.midiFor(name);
         PlaybackEngine.Request request = midi == null ? null
-            : new PlaybackEngine.Request(name, Filepath.Unchecked.getFile(AssetManager.soundbankPath()), midi, config.loop(), revision);
+            : new PlaybackEngine.Request(name, AssetManager.soundbankPath(), midi, config.loop(), revision);
 
         if (!Objects.equals(name, lastName)) {
             if (config.diagnostics()) log.info("Track: {} osrsId={} archive={} replacement={}",

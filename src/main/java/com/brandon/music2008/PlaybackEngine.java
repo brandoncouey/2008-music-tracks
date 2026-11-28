@@ -3,6 +3,7 @@ package com.brandon.music2008;
 import javax.sound.midi.*;
 import javax.sound.sampled.*;
 import java.io.*;
+import net.runelite.client.util.Filepath;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
@@ -13,8 +14,8 @@ final class PlaybackEngine implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(PlaybackEngine.class);
 
     static final class Request {
-        final String name; final File soundbank; final File midi; final boolean loop; final long revision;
-        Request(String name, File soundbank, File midi, boolean loop, long revision) {
+        final String name; final Filepath soundbank; final Filepath midi; final boolean loop; final long revision;
+        Request(String name, Filepath soundbank, Filepath midi, boolean loop, long revision) {
             this.name = name; this.soundbank = soundbank; this.midi = midi; this.loop = loop; this.revision = revision;
         }
         public boolean equals(Object o) {
@@ -25,8 +26,8 @@ final class PlaybackEngine implements AutoCloseable {
         public int hashCode() { return Long.hashCode(revision); }
         // accessors
         String name() { return name; }
-        File soundbank() { return soundbank; }
-        File midi() { return midi; }
+        Filepath soundbank() { return soundbank; }
+        Filepath midi() { return midi; }
         boolean loop() { return loop; }
     }
 
@@ -46,7 +47,7 @@ final class PlaybackEngine implements AutoCloseable {
     // Synthesizer and soundbank are created once and reused across tracks
     private Synthesizer synthesizer;
     private Soundbank   soundbank;
-    private File        loadedSoundbankPath;
+    private Filepath    loadedSoundbankPath;
 
     PlaybackEngine() { worker.submit(this::run); }
 
@@ -104,22 +105,27 @@ final class PlaybackEngine implements AutoCloseable {
         closeSynthesizer();
     }
 
-    private void ensureSynthesizer(File sbPath) throws MidiUnavailableException, InvalidMidiDataException, IOException {
+    private void ensureSynthesizer(Filepath sbPath) throws MidiUnavailableException, InvalidMidiDataException, IOException {
         if (synthesizer != null && synthesizer.isOpen() && sbPath.equals(loadedSoundbankPath)) return;
         closeSynthesizer();
 
         synthesizer = MidiSystem.getSynthesizer();
         synthesizer.open();
 
-        soundbank = MidiSystem.getSoundbank(sbPath);
+        try (InputStream in = new BufferedInputStream(sbPath.openInputStream())) {
+            soundbank = MidiSystem.getSoundbank(in);
+        }
         synthesizer.loadAllInstruments(soundbank);
         loadedSoundbankPath = sbPath;
         applyVolume();
-        log.info("Synthesizer opened with soundbank: {}", sbPath.getName());
+        log.info("Synthesizer opened with soundbank: {}", sbPath.getFileName());
     }
 
     private void playOnce(Request next) throws MidiUnavailableException, InvalidMidiDataException, IOException {
-        Sequence seq = MidiSystem.getSequence(next.midi());
+        Sequence seq;
+        try (InputStream in = new BufferedInputStream(next.midi().openInputStream())) {
+            seq = MidiSystem.getSequence(in);
+        }
 
         try (Sequencer sequencer = MidiSystem.getSequencer(false)) {
             sequencer.getTransmitter().setReceiver(synthesizer.getReceiver());

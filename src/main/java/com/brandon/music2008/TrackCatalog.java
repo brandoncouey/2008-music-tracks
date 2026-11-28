@@ -10,7 +10,7 @@ public final class TrackCatalog {
     private static final Charset CP1252 = Charset.forName("windows-1252");
     private final Map<Integer, Integer> archives = new HashMap<>();
     private final Set<Integer> ambiguous = new HashSet<>();
-    private final Map<Integer, File> midiFiles = new HashMap<>();
+    private final Map<Integer, Filepath> midiFiles = new HashMap<>();
 
     public static int nameHash(String name) {
         String clean = name.replaceAll("<[^>]*>", "").replace(' ', ' ').trim().toLowerCase(Locale.ROOT);
@@ -47,8 +47,7 @@ public final class TrackCatalog {
                     if (!filename.toLowerCase(Locale.ROOT).endsWith(".mid")) continue;
                     try {
                         int archive = Integer.parseInt(filename.split("[ .-]", 2)[0]);
-                        File file = Filepath.Unchecked.getFile(fp);
-                        if (catalog.midiFiles.putIfAbsent(archive, file) != null)
+                        if (catalog.midiFiles.putIfAbsent(archive, fp) != null)
                             throw new IOException("Duplicate MIDI archive " + archive + " in " + midiDir);
                     } catch (NumberFormatException ignored) { }
                 }
@@ -58,8 +57,8 @@ public final class TrackCatalog {
     }
 
     public Integer archiveFor(String name) { return archives.get(nameHash(name)); }
-    public File midiFor(String name) { Integer archive = archiveFor(name); return archive == null ? null : midiFiles.get(archive); }
-    public File midiFor(int archive) { return midiFiles.get(archive); }
+    public Filepath midiFor(String name) { Integer archive = archiveFor(name); return archive == null ? null : midiFiles.get(archive); }
+    public Filepath midiFor(int archive) { return midiFiles.get(archive); }
     public int available() { return midiFiles.size(); }
 
     /**
@@ -69,8 +68,8 @@ public final class TrackCatalog {
      * displayed name. The caller resolves the fanfare archive by OSRS fanfare ID once a
      * confirmed script-ID-to-archive mapping is available.
      */
-    public static Map<Integer, File> loadFanfares(Filepath fanfareDir) throws IOException {
-        Map<Integer, File> fanfares = new LinkedHashMap<>();
+    public static Map<Integer, Filepath> loadFanfares(Filepath fanfareDir) throws IOException {
+        Map<Integer, Filepath> fanfares = new LinkedHashMap<>();
         if (!fanfareDir.isDirectory()) return fanfares;
         try (var stream = fanfareDir.walk(1)) {
             for (var it = stream.iterator(); it.hasNext(); ) {
@@ -80,7 +79,7 @@ public final class TrackCatalog {
                 if (!filename.toLowerCase(Locale.ROOT).endsWith(".mid")) continue;
                 try {
                     int archive = Integer.parseInt(filename.split("[ .-]", 2)[0]);
-                    fanfares.putIfAbsent(archive, Filepath.Unchecked.getFile(fp));
+                    fanfares.putIfAbsent(archive, fp);
                 } catch (NumberFormatException ignored) {}
             }
         }

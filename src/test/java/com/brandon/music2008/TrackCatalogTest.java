@@ -25,7 +25,7 @@ public class TrackCatalogTest {
             try (OutputStream out = new FileOutputStream(midi)) { out.write(1); }
             Filepath dirFp = Filepath.Unchecked.getRooted(dir.toPath());
             TrackCatalog c = TrackCatalog.load(dirFp);
-            assertEquals(midi, c.midiFor("Scape Main")); assertNull(c.midiFor("Autumn Voyage"));
+            assertEquals(midi.getName(), c.midiFor("Scape Main").getFileName()); assertNull(c.midiFor("Autumn Voyage"));
             midi.delete();
         } finally { dir.delete(); }
     }
