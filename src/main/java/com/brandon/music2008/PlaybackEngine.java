@@ -43,6 +43,7 @@ final class PlaybackEngine implements AutoCloseable {
     private volatile String status = "Waiting for a song";
     private volatile double volume = 1.0;
     private volatile boolean closed;
+    private double appliedVolume = -1;
 
     // Synthesizer and soundbank are created once and reused across tracks
     private Synthesizer synthesizer;
@@ -64,12 +65,28 @@ final class PlaybackEngine implements AutoCloseable {
     boolean isActive(Request request) { return request != null && request.equals(active); }
     String status() { return status; }
 
+    /**
+     * Universal real-time "master volume" SysEx (F0 7F 7F 04 01 lsb msb F7). Scales the synthesizer's
+     * output without touching per-channel CC7, so the mix baked into each MIDI file is preserved.
+     */
+    static SysexMessage masterVolumeMessage(double volume) throws InvalidMidiDataException {
+        // Gervill squares the master volume (0.5 -> 0.25 amplitude); the plugin's volume is already the
+        // target amplitude, so send its square root to get that level out.
+        int v = (int) Math.round(Math.sqrt(Math.max(0, Math.min(1, volume))) * 0x3FFF);
+        byte[] data = {(byte) 0xF0, 0x7F, 0x7F, 0x04, 0x01, (byte) (v & 0x7F), (byte) ((v >> 7) & 0x7F), (byte) 0xF7};
+        return new SysexMessage(data, data.length);
+    }
+
     private void applyVolume() {
         Synthesizer s = synthesizer;
         if (s == null || !s.isOpen()) return;
-        int v = (int) (volume * 127);
-        for (MidiChannel ch : s.getChannels()) {
-            if (ch != null) ch.controlChange(7, v); // CC7 = channel volume
+        double v = volume;
+        if (v == appliedVolume) return;
+        try {
+            s.getReceiver().send(masterVolumeMessage(v), -1);
+            appliedVolume = v;
+        } catch (MidiUnavailableException | InvalidMidiDataException e) {
+            log.warn("Could not set synthesizer volume", e);
         }
     }
 
@@ -145,6 +162,9 @@ final class PlaybackEngine implements AutoCloseable {
             while (!closed && next.equals(desired.get()) && sequencer.isRunning()) {
                 synchronized (wake) { try { wake.wait(50); } catch (InterruptedException e) { break; } }
             }
+            log.debug("Stopped {} at {}ms of {}ms (closed={}, stillDesired={}, sequencerRunning={})", next.name(),
+                sequencer.getMicrosecondPosition() / 1000, seq.getMicrosecondLength() / 1000,
+                closed, next.equals(desired.get()), sequencer.isRunning());
             sequencer.stop();
             active = null;
         }
@@ -159,6 +179,7 @@ final class PlaybackEngine implements AutoCloseable {
             synthesizer = null;
             soundbank   = null;
             loadedSoundbankPath = null;
+            appliedVolume = -1;
         }
     }
 
