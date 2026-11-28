@@ -6,7 +6,7 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.nio.file.*;
+import java.io.File;
 import java.util.Map;
 import java.util.Objects;
 import net.runelite.api.*;
@@ -36,7 +36,7 @@ public class Music2008Plugin extends Plugin {
 
     private PlaybackEngine engine;
     private TrackCatalog catalog;
-    private Map<Integer, Path> fanfareCatalog = Map.of();
+    private Map<Integer, File> fanfareCatalog = Map.of();
     private NavigationButton navigation;
 
     // Panel widgets updated from background + client threads
@@ -126,7 +126,7 @@ public class Music2008Plugin extends Plugin {
 
     private void reloadCatalogue() {
         try {
-            catalog = TrackCatalog.load(Path.of(config.midiFolder()));
+            catalog = TrackCatalog.load(new File(config.midiFolder()));
             catalogueError = null;
             log.info("Loaded {} MIDI files", catalog.available());
         } catch (Exception e) {
@@ -135,7 +135,7 @@ public class Music2008Plugin extends Plugin {
             log.warn("Cannot load catalogue", e);
         }
         try {
-            fanfareCatalog = TrackCatalog.loadFanfares(Path.of(config.fanfareFolder()));
+            fanfareCatalog = TrackCatalog.loadFanfares(new File(config.fanfareFolder()));
             log.info("Loaded {} fanfare MIDI files", fanfareCatalog.size());
         } catch (Exception e) {
             fanfareCatalog = Map.of();
@@ -304,7 +304,7 @@ public class Music2008Plugin extends Plugin {
         boolean gameMuted = vol < 0.001;
         if (preview != null && client.getGameState() != GameState.LOGGED_IN) vol = 0.35;
 
-        Path midi = (name == null || catalog == null || gameMuted) ? null : catalog.midiFor(name);
+        File midi = (name == null || catalog == null || gameMuted) ? null : catalog.midiFor(name);
         PlaybackEngine.Request request = midi == null ? null
             : new PlaybackEngine.Request(name, AssetManager.soundbankPath(), midi, config.loop(), revision);
 

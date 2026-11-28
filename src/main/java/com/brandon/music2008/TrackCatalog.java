@@ -2,21 +2,17 @@ package com.brandon.music2008;
 
 import java.io.*;
 import java.nio.charset.*;
-import java.nio.file.*;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.LinkedHashMap;
 
 /** Matches cache name hashes rather than assuming archive IDs are shared. */
 public final class TrackCatalog {
     private static final Charset CP1252 = Charset.forName("windows-1252");
     private final Map<Integer, Integer> archives = new HashMap<>();
     private final Set<Integer> ambiguous = new HashSet<>();
-    private final Map<Integer, Path> midiFiles = new HashMap<>();
+    private final Map<Integer, File> midiFiles = new HashMap<>();
 
     public static int nameHash(String name) {
-        String clean = name.replaceAll("<[^>]*>", "").replace(' ', ' ').trim().toLowerCase(Locale.ROOT);
+        String clean = name.replaceAll("<[^>]*>", "").replace(' ', ' ').trim().toLowerCase(Locale.ROOT);
         int hash = 0;
         for (byte b : clean.getBytes(CP1252)) hash = hash * 31 + b;
         return hash;
@@ -28,7 +24,7 @@ public final class TrackCatalog {
         if (previous != null && previous != archive) { archives.remove(hash); ambiguous.add(hash); }
     }
 
-    public static TrackCatalog load(Path midiDir) throws IOException {
+    public static TrackCatalog load(File midiDir) throws IOException {
         TrackCatalog catalog = new TrackCatalog();
         try (InputStream in = TrackCatalog.class.getResourceAsStream("/2008-music-index.tsv")) {
             if (in == null) throw new IOException("Missing 2008 Music Soundtrack catalogue");
@@ -41,22 +37,25 @@ public final class TrackCatalog {
                 }
             }
         }
-        try (Stream<Path> paths = Files.list(midiDir)) {
-            for (Path path : paths.filter(Files::isRegularFile).collect(Collectors.toList())) {
-                String filename = path.getFileName().toString();
+        File[] files = midiDir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (!file.isFile()) continue;
+                String filename = file.getName();
                 if (!filename.toLowerCase(Locale.ROOT).endsWith(".mid")) continue;
                 try {
                     int archive = Integer.parseInt(filename.split("[ .-]", 2)[0]);
-                    if (catalog.midiFiles.putIfAbsent(archive, path) != null)
+                    if (catalog.midiFiles.putIfAbsent(archive, file) != null)
                         throw new IOException("Duplicate MIDI archive " + archive + " in " + midiDir);
                 } catch (NumberFormatException ignored) { }
             }
         }
         return catalog;
     }
+
     public Integer archiveFor(String name) { return archives.get(nameHash(name)); }
-    public Path midiFor(String name) { Integer archive = archiveFor(name); return archive == null ? null : midiFiles.get(archive); }
-    public Path midiFor(int archive) { return midiFiles.get(archive); }
+    public File midiFor(String name) { Integer archive = archiveFor(name); return archive == null ? null : midiFiles.get(archive); }
+    public File midiFor(int archive) { return midiFiles.get(archive); }
     public int available() { return midiFiles.size(); }
 
     /**
@@ -66,16 +65,18 @@ public final class TrackCatalog {
      * displayed name. The caller resolves the fanfare archive by OSRS fanfare ID once a
      * confirmed script-ID-to-archive mapping is available.
      */
-    public static Map<Integer, Path> loadFanfares(Path fanfareDir) throws IOException {
-        Map<Integer, Path> fanfares = new LinkedHashMap<>();
-        if (!Files.isDirectory(fanfareDir)) return fanfares;
-        try (Stream<Path> paths = Files.list(fanfareDir)) {
-            for (Path path : paths.filter(Files::isRegularFile).collect(Collectors.toList())) {
-                String filename = path.getFileName().toString();
+    public static Map<Integer, File> loadFanfares(File fanfareDir) throws IOException {
+        Map<Integer, File> fanfares = new LinkedHashMap<>();
+        if (!fanfareDir.isDirectory()) return fanfares;
+        File[] files = fanfareDir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (!file.isFile()) continue;
+                String filename = file.getName();
                 if (!filename.toLowerCase(Locale.ROOT).endsWith(".mid")) continue;
                 try {
                     int archive = Integer.parseInt(filename.split("[ .-]", 2)[0]);
-                    fanfares.putIfAbsent(archive, path);
+                    fanfares.putIfAbsent(archive, file);
                 } catch (NumberFormatException ignored) {}
             }
         }

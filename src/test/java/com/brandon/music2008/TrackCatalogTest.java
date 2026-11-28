@@ -2,7 +2,7 @@ package com.brandon.music2008;
 
 import org.junit.Test;
 import static org.junit.Assert.*;
-import java.nio.file.*;
+import java.io.*;
 
 public class TrackCatalogTest {
     @Test public void recognizesDifferentArchiveIdsByName() {
@@ -17,12 +17,14 @@ public class TrackCatalogTest {
         c.add(99,h);c.add(100,h);assertNull(c.archiveFor("Harmony"));
     }
     @Test public void loadsRenamedFilesAndLeavesMissingFilesUnmapped() throws Exception {
-        Path dir=Files.createTempDirectory("music2008-catalog-test");
+        File dir = File.createTempFile("music2008-catalog-test", "");
+        dir.delete(); dir.mkdirs();
         try {
-            Path midi=dir.resolve("00000 - Scape Main.mid");Files.write(midi,new byte[]{1});
-            TrackCatalog c=TrackCatalog.load(dir);
-            assertEquals(midi,c.midiFor("Scape Main"));assertNull(c.midiFor("Autumn Voyage"));
-            Files.delete(midi);
-        } finally {Files.delete(dir);}
+            File midi = new File(dir, "00000 - Scape Main.mid");
+            try (OutputStream out = new FileOutputStream(midi)) { out.write(1); }
+            TrackCatalog c = TrackCatalog.load(dir);
+            assertEquals(midi, c.midiFor("Scape Main")); assertNull(c.midiFor("Autumn Voyage"));
+            midi.delete();
+        } finally { dir.delete(); }
     }
 }
