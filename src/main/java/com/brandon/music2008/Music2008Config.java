@@ -1,24 +1,19 @@
 package com.brandon.music2008;
 
 import net.runelite.client.config.*;
-import java.io.File;
 
 @ConfigGroup(Music2008Config.GROUP)
 public interface Music2008Config extends Config {
     String GROUP = "music2008";
 
-    @ConfigItem(keyName="midiFolder", name="Music files folder (optional)", description="Override the auto-managed MIDI folder. Leave blank to use ~/.runelite/music2008/assets/music", position=1)
+    @ConfigItem(keyName="midiFolder", name="Music files folder (optional)", description="Override the auto-managed MIDI folder. Leave blank to use the plugin data directory.", position=1)
     default String midiFolder() {
-        String bundle = System.getProperty("music2008.bundle");
-        if (bundle != null) return new File(new File(bundle, "assets"), "music").getPath();
-        return new File(AssetManager.ASSETS_DIR, "music").getPath();
+        return "";
     }
 
-    @ConfigItem(keyName="fanfareFolder", name="Fanfare files folder (optional)", description="Override the auto-managed fanfare folder. Leave blank to use ~/.runelite/music2008/assets/fanfares", position=2)
+    @ConfigItem(keyName="fanfareFolder", name="Fanfare files folder (optional)", description="Override the auto-managed fanfare folder. Leave blank to use the plugin data directory.", position=2)
     default String fanfareFolder() {
-        String bundle = System.getProperty("music2008.bundle");
-        if (bundle != null) return new File(new File(bundle, "assets"), "fanfares").getPath();
-        return new File(AssetManager.ASSETS_DIR, "fanfares").getPath();
+        return "";
     }
 
     @ConfigItem(keyName="loop", name="Loop replacements", description="Repeat the song while OSRS keeps the same song selected", position=3)

@@ -3,6 +3,7 @@ package com.brandon.music2008;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import java.io.*;
+import net.runelite.client.util.Filepath;
 
 public class TrackCatalogTest {
     @Test public void recognizesDifferentArchiveIdsByName() {
@@ -22,7 +23,8 @@ public class TrackCatalogTest {
         try {
             File midi = new File(dir, "00000 - Scape Main.mid");
             try (OutputStream out = new FileOutputStream(midi)) { out.write(1); }
-            TrackCatalog c = TrackCatalog.load(dir);
+            Filepath dirFp = Filepath.Unchecked.getRooted(dir.toPath());
+            TrackCatalog c = TrackCatalog.load(dirFp);
             assertEquals(midi, c.midiFor("Scape Main")); assertNull(c.midiFor("Autumn Voyage"));
             midi.delete();
         } finally { dir.delete(); }

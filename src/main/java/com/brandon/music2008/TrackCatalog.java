@@ -3,6 +3,7 @@ package com.brandon.music2008;
 import java.io.*;
 import java.nio.charset.*;
 import java.util.*;
+import net.runelite.client.util.Filepath;
 
 /** Matches cache name hashes rather than assuming archive IDs are shared. */
 public final class TrackCatalog {
@@ -24,7 +25,7 @@ public final class TrackCatalog {
         if (previous != null && previous != archive) { archives.remove(hash); ambiguous.add(hash); }
     }
 
-    public static TrackCatalog load(File midiDir) throws IOException {
+    public static TrackCatalog load(Filepath midiDir) throws IOException {
         TrackCatalog catalog = new TrackCatalog();
         try (InputStream in = TrackCatalog.class.getResourceAsStream("/2008-music-index.tsv")) {
             if (in == null) throw new IOException("Missing 2008 Music Soundtrack catalogue");
@@ -37,17 +38,20 @@ public final class TrackCatalog {
                 }
             }
         }
-        File[] files = midiDir.listFiles();
-        if (files != null) {
-            for (File file : files) {
-                if (!file.isFile()) continue;
-                String filename = file.getName();
-                if (!filename.toLowerCase(Locale.ROOT).endsWith(".mid")) continue;
-                try {
-                    int archive = Integer.parseInt(filename.split("[ .-]", 2)[0]);
-                    if (catalog.midiFiles.putIfAbsent(archive, file) != null)
-                        throw new IOException("Duplicate MIDI archive " + archive + " in " + midiDir);
-                } catch (NumberFormatException ignored) { }
+        if (midiDir.isDirectory()) {
+            try (var stream = midiDir.walk(1)) {
+                for (var it = stream.iterator(); it.hasNext(); ) {
+                    Filepath fp = it.next();
+                    if (!fp.isFile()) continue;
+                    String filename = fp.getFileName();
+                    if (!filename.toLowerCase(Locale.ROOT).endsWith(".mid")) continue;
+                    try {
+                        int archive = Integer.parseInt(filename.split("[ .-]", 2)[0]);
+                        File file = Filepath.Unchecked.getFile(fp);
+                        if (catalog.midiFiles.putIfAbsent(archive, file) != null)
+                            throw new IOException("Duplicate MIDI archive " + archive + " in " + midiDir);
+                    } catch (NumberFormatException ignored) { }
+                }
             }
         }
         return catalog;
@@ -65,18 +69,18 @@ public final class TrackCatalog {
      * displayed name. The caller resolves the fanfare archive by OSRS fanfare ID once a
      * confirmed script-ID-to-archive mapping is available.
      */
-    public static Map<Integer, File> loadFanfares(File fanfareDir) throws IOException {
+    public static Map<Integer, File> loadFanfares(Filepath fanfareDir) throws IOException {
         Map<Integer, File> fanfares = new LinkedHashMap<>();
         if (!fanfareDir.isDirectory()) return fanfares;
-        File[] files = fanfareDir.listFiles();
-        if (files != null) {
-            for (File file : files) {
-                if (!file.isFile()) continue;
-                String filename = file.getName();
+        try (var stream = fanfareDir.walk(1)) {
+            for (var it = stream.iterator(); it.hasNext(); ) {
+                Filepath fp = it.next();
+                if (!fp.isFile()) continue;
+                String filename = fp.getFileName();
                 if (!filename.toLowerCase(Locale.ROOT).endsWith(".mid")) continue;
                 try {
                     int archive = Integer.parseInt(filename.split("[ .-]", 2)[0]);
-                    fanfares.putIfAbsent(archive, file);
+                    fanfares.putIfAbsent(archive, Filepath.Unchecked.getFile(fp));
                 } catch (NumberFormatException ignored) {}
             }
         }

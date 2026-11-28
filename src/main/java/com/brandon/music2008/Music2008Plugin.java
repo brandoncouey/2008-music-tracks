@@ -7,6 +7,7 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.Objects;
 import net.runelite.api.*;
@@ -16,6 +17,7 @@ import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.util.Filepath;
 import okhttp3.OkHttpClient;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -62,7 +64,8 @@ public class Music2008Plugin extends Plugin {
         return manager.getConfig(Music2008Config.class);
     }
 
-    @Override protected void startUp() {
+    @Override protected void startUp() throws Exception {
+        AssetManager.init(getPluginDirectory());
         engine = new PlaybackEngine();
         SwingUtilities.invokeLater(this::buildPanel);
         log.info("2008 Music Soundtrack enabled; soundbank={}", AssetManager.soundbankPath());
@@ -124,9 +127,20 @@ public class Music2008Plugin extends Plugin {
         });
     }
 
+    private Filepath resolveFolder(String configValue, String subDir) {
+        if (!configValue.isEmpty()) {
+            return Filepath.Unchecked.getRooted(Path.of(configValue));
+        }
+        String bundle = System.getProperty("music2008.bundle");
+        if (bundle != null) {
+            return Filepath.Unchecked.getRooted(Path.of(bundle, "assets", subDir));
+        }
+        return AssetManager.assetsDir.join(subDir);
+    }
+
     private void reloadCatalogue() {
         try {
-            catalog = TrackCatalog.load(new File(config.midiFolder()));
+            catalog = TrackCatalog.load(resolveFolder(config.midiFolder(), "music"));
             catalogueError = null;
             log.info("Loaded {} MIDI files", catalog.available());
         } catch (Exception e) {
@@ -135,7 +149,7 @@ public class Music2008Plugin extends Plugin {
             log.warn("Cannot load catalogue", e);
         }
         try {
-            fanfareCatalog = TrackCatalog.loadFanfares(new File(config.fanfareFolder()));
+            fanfareCatalog = TrackCatalog.loadFanfares(resolveFolder(config.fanfareFolder(), "fanfares"));
             log.info("Loaded {} fanfare MIDI files", fanfareCatalog.size());
         } catch (Exception e) {
             fanfareCatalog = Map.of();
@@ -306,7 +320,7 @@ public class Music2008Plugin extends Plugin {
 
         File midi = (name == null || catalog == null || gameMuted) ? null : catalog.midiFor(name);
         PlaybackEngine.Request request = midi == null ? null
-            : new PlaybackEngine.Request(name, AssetManager.soundbankPath(), midi, config.loop(), revision);
+            : new PlaybackEngine.Request(name, Filepath.Unchecked.getFile(AssetManager.soundbankPath()), midi, config.loop(), revision);
 
         if (!Objects.equals(name, lastName)) {
             if (config.diagnostics()) log.info("Track: {} osrsId={} archive={} replacement={}",
